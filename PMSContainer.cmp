@@ -1,0 +1,273 @@
+<aura:component controller="PMSController" implements="force:appHostable,flexipage:availableForAllPageTypes,force:lightningQuickAction" access="global">
+    <aura:attribute name="selectedProject" type="String" access="public"/>
+    <aura:attribute name="selectedEmployee" type="String" access="public"/>
+    <aura:attribute name="projectNameList" type="List" access="public"/>
+    <aura:attribute name="empNameList" type="List" access="public"/>
+    <aura:attribute name="statusDate" type="Date" access="public"/>
+    <aura:attribute name="selectedSubLine" type="String" access="public"/>
+    <aura:attribute name="selectedDesLine" type="String" access="public"/>
+    <aura:attribute name="todayStatusList" type="List" access="public"/>
+    <aura:attribute name="weekStatusList" type="List" access="public"/>
+    <aura:attribute name="monthStatusList" type="List" access="public"/>
+    <aura:attribute name="isProcessing" type="Boolean" default="false" />
+    <aura:attribute name="isSuccess" type="Boolean" default="false" />
+    <!--<aura:handler name="init" value="{!this}" action="{!c.doInit}" />-->
+	<div class="slds-text-heading_large slds-box">Project Management System</div>
+    <aura:if isTrue="{!v.isProcessing}">
+        <div style="text-align:center">
+            <lightning:spinner alternativeText="Loading" size="medium"/>
+        </div>
+    </aura:if>
+    <div class="slds-box">
+        <lightning:tabset selectedTabId="fillStatusId">
+            <lightning:tab label="Create" id="fillStatusId" onactive="{!c.doInit}">
+                <fieldset class="slds-form-element slds-form-element_compound">
+                    <div class="slds-form-element__control">
+                        <div class="slds-form-element__row">
+                            <div class="slds-size_1-of-3">
+                                <div class="slds-form-element">
+                                    <div class="slds-form-element__control">
+                                        <lightning:select aura:id="selectProId" name="selectProId" label="Project Name" required="true" 
+                                                          value="{!v.selectedProject}">       
+                                            <option value="">Choose Project Name...</option>
+                                            <aura:iteration items="{!v.projectNameList}" var="gp">
+                                                <option text="{!gp.label}" value="{!gp.value}">
+                                                </option>
+                                            </aura:iteration>
+                                        </lightning:select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="slds-size_1-of-3">
+                                <div class="slds-form-element">
+                                    <div class="slds-form-element__control">
+                                        <lightning:select aura:id="selectEmpId" name="selectEmpId" label="Emplooyee Name" required="true" 
+                                                          value="{!v.selectedEmployee}">       
+                                            <option value="">Choose Employee Name...</option>
+                                            <aura:iteration items="{!v.empNameList}" var="gEmp">
+                                                <option text="{!gEmp.label}" value="{!gEmp.value}">
+                                                </option>
+                                            </aura:iteration>
+                                        </lightning:select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="slds-form-element__control">
+                        <div class="slds-form-element__row">
+                            <div class="slds-size_1-of-3">
+                                <div class="slds-form-element">
+                                    <div class="slds-form-element__control">
+                                        <label class="slds-form-element__label" for="input-01">Status Date</label>
+                                        <ui:inputDate aura:id="expdate" class="field" value="{!v.statusDate}" displayDatePicker="true" required="true"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="slds-form-element__control">
+                        <div class="slds-form-element__row">
+                            <div class="slds-size_2-of-3">
+                                <div class="slds-form-element">
+                                    <div class="slds-form-element__control">
+                                        <label class="slds-form-element__label" for="input-01">Subject</label>
+                                        <div class="slds-form-element__control">
+                                            <input type="text" id="subjectLine" class="slds-input" required="true" value="{!v.selectedSubLine}"/>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="slds-form-element__control">
+                        <div class="slds-form-element__row">
+                            <div class="slds-size_2-of-3">
+                                <div class="slds-form-element">
+                                    <div class="slds-form-element__control">
+                                        <label class="slds-form-element__label" for="input-01">Description</label>
+                                        <div class="slds-form-element__control">
+                                            <lightning:inputRichText value="{!v.selectedDesLine}" placeholder="Type something interesting"/>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="slds-form-element__control">
+                        <div class="slds-form-element__row">
+                            <div class="slds-form-element">
+                                <div class="slds-form-element__control">
+                                    <button class="slds-button slds-button_brand" onclick="{!c.saveStatus}">Save</button>
+                                </div>
+                            </div>
+                            <aura:if isTrue="{!v.isSuccess}">
+                                <ui:message title="Status created successfully!" severity="confirm" closable="true"/>
+                            </aura:if>
+                        </div>
+                    </div>
+                </fieldset>
+            </lightning:tab>
+            <lightning:tab label="View All" id="viewAll" onactive="{!c.todayStatus}">
+                <lightning:tabset selectedTabId="todayStatus">
+                    <lightning:tab label="Today" id="todayStatus" onactive="{!c.todayStatus}">
+                        <div class="slds-form-element__control">
+                            <div class="slds-form-element__row">
+                                <div class="slds-size_1-of-1">
+                                    <div class="slds-form-element">
+                                        <table class="slds-table slds-table_cell-buffer slds-table_bordered">
+                                            <thead>
+                                                <tr class="slds-line-height_reset">
+                                                    <th class="" scope="col">
+                                                        <div class="slds-truncate" title="Status Date">Status Date</div>
+                                                    </th>
+                                                    <th class="" scope="col">
+                                                        <div class="slds-truncate" title="Employee Name">Employee Name</div>
+                                                    </th>
+                                                    <th class="" scope="col">
+                                                        <div class="slds-truncate" title="Project Name">Project Name</div>
+                                                    </th>
+                                                    <th class="" scope="col">
+                                                        <div class="slds-truncate" title="Subject">Subject</div>
+                                                    </th>
+                                                    <th class="" scope="col">
+                                                        <div class="slds-truncate" title="Description">Description</div>
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <aura:iteration items="{!v.todayStatusList}" var="today_Status">
+                                                    <tr class="slds-hint-parent">
+                                                        <td>
+                                                            <div>{!today_Status.Status_Date__c}</div>
+                                                        </td>
+                                                        <td>
+                                                            <div>{!today_Status.GOC_Employee__r.Name}</div>
+                                                        </td>
+                                                        <td >
+                                                            <div>{!today_Status.GOC_Project__r.Name}</div>
+                                                        </td>
+                                                        <td>
+                                                            <div>{!today_Status.Name}</div>
+                                                        </td>
+                                                        <td>
+                                                            <div>{!today_Status.Status_Description__c}</div>
+                                                        </td>
+                                                    </tr>
+                                                </aura:iteration>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </lightning:tab>
+                    <lightning:tab label="This Week" id="thisWeek" onactive="{!c.weekStatus}">
+                    	<div class="slds-form-element__control">
+                            <div class="slds-form-element__row">
+                                <div class="slds-size_1-of-1">
+                                    <div class="slds-form-element">
+                                        <table class="slds-table slds-table_cell-buffer slds-table_bordered">
+                                            <thead>
+                                                <tr class="slds-line-height_reset">
+                                                    <th class="" scope="col">
+                                                        <div class="slds-truncate" title="Status Date">Status Date</div>
+                                                    </th>
+                                                    <th class="" scope="col">
+                                                        <div class="slds-truncate" title="Employee Name">Employee Name</div>
+                                                    </th>
+                                                    <th class="" scope="col">
+                                                        <div class="slds-truncate" title="Project Name">Project Name</div>
+                                                    </th>
+                                                    <th class="" scope="col">
+                                                        <div class="slds-truncate" title="Subject">Subject</div>
+                                                    </th>
+                                                    <th class="" scope="col">
+                                                        <div class="slds-truncate" title="Description">Description</div>
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <aura:iteration items="{!v.weekStatusList}" var="week_Status">
+                                                    <tr class="slds-hint-parent">
+                                                        <td>
+                                                            <div>{!week_Status.Status_Date__c}</div>
+                                                        </td>
+                                                        <td>
+                                                            <div>{!week_Status.GOC_Employee__r.Name}</div>
+                                                        </td>
+                                                        <td >
+                                                            <div>{!week_Status.GOC_Project__r.Name}</div>
+                                                        </td>
+                                                        <td>
+                                                            <div>{!week_Status.Name}</div>
+                                                        </td>
+                                                        <td>
+                                                            <div>{!week_Status.Status_Description__c}</div>
+                                                        </td>
+                                                    </tr>
+                                                </aura:iteration>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </lightning:tab>
+                    <lightning:tab label="This Month" id="thisMonth" onactive="{!c.monthStatus}">
+                        <div class="slds-form-element__control">
+                            <div class="slds-form-element__row">
+                                <div class="slds-size_1-of-1">
+                                    <div class="slds-form-element">
+                                        <table class="slds-table slds-table_cell-buffer slds-table_bordered">
+                                            <thead>
+                                                <tr class="slds-line-height_reset">
+                                                    <th class="" scope="col">
+                                                        <div class="slds-truncate" title="Status Date">Status Date</div>
+                                                    </th>
+                                                    <th class="" scope="col">
+                                                        <div class="slds-truncate" title="Employee Name">Employee Name</div>
+                                                    </th>
+                                                    <th class="" scope="col">
+                                                        <div class="slds-truncate" title="Project Name">Project Name</div>
+                                                    </th>
+                                                    <th class="" scope="col">
+                                                        <div class="slds-truncate" title="Subject">Subject</div>
+                                                    </th>
+                                                    <th class="" scope="col">
+                                                        <div class="slds-truncate" title="Description">Description</div>
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <aura:iteration items="{!v.monthStatusList}" var="month_Status">
+                                                    <tr class="slds-hint-parent">
+                                                        <td>
+                                                            <div>{!month_Status.Status_Date__c}</div>
+                                                        </td>
+                                                        <td>
+                                                            <div>{!month_Status.GOC_Employee__r.Name}</div>
+                                                        </td>
+                                                        <td >
+                                                            <div>{!month_Status.GOC_Project__r.Name}</div>
+                                                        </td>
+                                                        <td>
+                                                            <div>{!month_Status.Name}</div>
+                                                        </td>
+                                                        <td>
+                                                            <div>{!month_Status.Status_Description__c}</div>
+                                                        </td>
+                                                    </tr>
+                                                </aura:iteration>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </lightning:tab>
+    			</lightning:tabset>
+            </lightning:tab>
+        </lightning:tabset>
+    </div>
+</aura:component>
